@@ -9,6 +9,7 @@ const path = require('path');
 const UploadFile = require('./models/uploadFile');
 const sequelize = require('./config/db');
 const fs = require('fs');
+const { checkForUpdate } = require("./utils/update-check")
 
 const app = express();
 // Parse request bodies
@@ -31,7 +32,7 @@ const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         // Set the destination folder based on the siteName
         const siteName = req.body.siteName;
-        const siteUploadsFolder = UPLOADS_FOLDER+"/"+siteName;
+        const siteUploadsFolder = UPLOADS_FOLDER + "/" + siteName;
         if (!fs.existsSync(siteUploadsFolder)) {
             fs.mkdirSync(siteUploadsFolder, { recursive: true });
         }
@@ -67,6 +68,17 @@ app.post('/upload', upload.array('files', 10), async (req, res) => {
         res.status(500).json({ error: 'Failed to upload files.' });
     }
 });
+
+app.get('/check-for-update', async (req, res) => {
+    try {
+        const siteName = req.query.siteName;
+        const d = await checkForUpdate(siteName);
+        res.status(200).json(d);
+    } catch (err) {
+        console.error('Error while fetching for updates:', err);
+        res.status(500).json({ error: 'Failed to check update.' });
+    }
+})
 
 // Start the server after establishing the database connection
 sequelize
