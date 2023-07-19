@@ -1,7 +1,7 @@
 {
   "name": "update-management",
   "version": "1.0.0",
-  "description": "this microservice checks is build update management for any application",
+  "description": "this is a file version management microservice",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
