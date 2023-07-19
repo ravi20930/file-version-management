@@ -21,7 +21,11 @@ const FileUploadForm = () => {
   };
 
   const handleVersionChange = (e) => {
-    setVersion(e.target.value);
+    // Validate version input to accept decimal values up to 2 digits
+    const value = e.target.value;
+    if (/^\d+(\.\d{0,2})?$/.test(value)) {
+      setVersion(value);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -91,7 +95,8 @@ const FileUploadForm = () => {
         <Form.Group controlId="version">
           <Form.Label>Version</Form.Label>
           <Form.Control
-            type="text"
+            type="number"
+            step="0.01"
             value={version}
             onChange={handleVersionChange}
           />

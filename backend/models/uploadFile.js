@@ -17,7 +17,7 @@ const UploadedFile = sequelize.define('uploadedFile', {
         allowNull: false,
     },
     version: {
-        type: DataTypes.FLOAT,
+        type: DataTypes.DECIMAL(10,2),
         allowNull: false,
         defaultValue: 1,
     },
