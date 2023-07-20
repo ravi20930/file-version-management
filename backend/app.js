@@ -28,6 +28,9 @@ if (!fs.existsSync(UPLOADS_FOLDER)) {
 app.use(cors());
 app.use(express.static(UPLOADS_FOLDER));
 
+const ftp = require("basic-ftp")
+const SftpClient = require('ssh2-sftp-client');
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         // Set the destination folder based on the siteName
@@ -47,17 +50,55 @@ const upload = multer({ storage });
 
 app.post('/upload', upload.array('files', 10), async (req, res) => {
     try {
-        const filePromises = req.files.map(async (file) => {
-            // Save necessary information about each uploaded file in the database
-            return UploadFile.create({
+        const sftpConfig = {
+            host: process.env.SFTP_HOST,
+            port: parseInt(process.env.SFTP_PORT, 10) || 22, // Default SFTP port is 22
+            username: process.env.SFTP_USERNAME,
+            password: process.env.SFTP_PASSWORD,
+        };
+        // const ftpClient = new ftp.Client()
+        // ftpClient.ftp.verbose = true;
+        // await ftpClient.access(sftpConfig);
+        const sftp = new SftpClient();
+        await sftp.connect(sftpConfig);
+
+        const siteName = req.body.siteName;
+        const remoteMainDir = `/web/ml-gui`;
+        const remoteSiteDir = `${remoteMainDir}/${siteName}`;
+
+        // Upload each file to the SFTP server
+        for (const file of req.files) {
+            const remoteFilePath = `${remoteSiteDir}/${file.originalname}`;
+            try {
+                await sftp.mkdir(remoteSiteDir); // 'true' creates parent directories if they don't exist
+            } catch (error) {
+                console.error(`Error while creating directory ${remoteSiteDir}:`, error.message);
+                // Handle the error as needed
+            }
+            try {
+                await sftp.put(file.path, remoteFilePath);
+            } catch (error) {
+                console.error(`Error while uploading file ${file.originalname}:`, error.message);
+                // Handle the error as needed
+                // For example, you can skip this file and continue with the next one
+            }
+        }
+        // for (const file of req.files) {
+        //     const remoteFilePath = `${remoteSiteDir}/${file.originalname}`;
+        //     await ftpClient.uploadFrom(file.path, remoteFilePath);
+        // }
+        // await ftpClient.close();
+
+        await sftp.end(); // Close the SFTP connection
+
+        // Save necessary information about each uploaded file in the database
+        for (const file of req.files) {
+            await UploadFile.create({
                 name: file.originalname,
                 version: req.body.version,
                 siteName: req.body.siteName,
             });
-        });
-
-        // Wait for all files to be saved to the database
-        await Promise.all(filePromises);
+        }
 
         // Emit a socket event after successful update
         io.emit('filesUploaded', { count: req.files.length });
@@ -68,6 +109,11 @@ app.post('/upload', upload.array('files', 10), async (req, res) => {
         res.status(500).json({ error: 'Failed to upload files.' });
     }
 });
+
+
+
+
+
 
 app.get('/check-for-update', async (req, res) => {
     try {
