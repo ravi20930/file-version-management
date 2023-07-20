@@ -77,6 +77,7 @@ app.post('/upload', upload.array('files', 10), async (req, res) => {
             }
             try {
                 await sftp.put(file.path, remoteFilePath);
+                fs.unlinkSync(file.path);
             } catch (error) {
                 console.error(`Error while uploading file ${file.originalname}:`, error.message);
                 // Handle the error as needed
