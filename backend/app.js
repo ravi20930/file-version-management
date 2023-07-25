@@ -48,7 +48,18 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-app.post('/upload', upload.array('files', 10), async (req, res) => {
+const authenticateToken = (req, res, next) => {
+    const providedToken = req.headers.authorization;
+    const expectedToken = process.env.TOKEN; // Token stored in environment variable
+
+    if (!providedToken || providedToken !== `Bearer ${expectedToken}`) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid token.' });
+    }
+
+    next();
+};
+
+app.post('/upload', authenticateToken, upload.array('files', 10), async (req, res) => {
     try {
         const sftpConfig = {
             host: process.env.SFTP_HOST,

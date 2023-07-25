@@ -8,6 +8,7 @@ import './FileUploadForm.css';
 const FileUploadForm = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [siteName, setSiteName] = useState('');
+  const [token, setToken] = useState('');
   const [version, setVersion] = useState('');
   const [uploadPercentage, setUploadPercentage] = useState(0);
   const fileInputRef = useRef(null); // Ref to access the file input element
@@ -18,6 +19,9 @@ const FileUploadForm = () => {
 
   const handleSiteNameChange = (e) => {
     setSiteName(e.target.value);
+  };
+  const handleTokenChange = (e) => {
+    setToken(e.target.value);
   };
 
   const handleVersionChange = (e) => {
@@ -41,6 +45,7 @@ const FileUploadForm = () => {
       await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`, // Include the token as a Bearer authorization header
         },
         onUploadProgress: (progressEvent) => {
           // Calculate and update the progress percentage
@@ -84,6 +89,14 @@ const FileUploadForm = () => {
     <Container>
       <h2>Anton Site Files Upload</h2>
       <Form onSubmit={handleSubmit}>
+        <Form.Group controlId="token">
+          <Form.Label>Token</Form.Label>
+          <Form.Control
+            type="text"
+            value={token}
+            onChange={handleTokenChange}
+          />
+        </Form.Group>
         <Form.Group controlId="siteName">
           <Form.Label>Site Name</Form.Label>
           <Form.Control
